@@ -1,0 +1,506 @@
+{
+  "info": {
+    "name": "Atividade API - Produtos e consumo DummyJSON",
+    "description": "Execute na ordem pelo Collection Runner. O CRUD usa somente produtos criados durante a execução. As últimas consultas acessam a DummyJSON pela API Laravel.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Listar produtos locais",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Resource paginado\", function () { pm.expect(pm.response.json().data).to.be.an(\"array\"); pm.expect(pm.response.json()).to.have.all.keys(\"data\", \"links\", \"meta\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Cadastrar produto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Produto teste Postman\",\n  \"descricao\": \"Criado pela coleção\",\n  \"preco\": 89.9,\n  \"quantidade\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Resource e campos cadastrados\", function () { const d = pm.response.json().data; pm.expect(d).to.have.all.keys(\"id\",\"nome\",\"descricao\",\"preco\",\"quantidade\",\"criado_em\"); pm.expect(d.nome).to.eql(\"Produto teste Postman\"); pm.expect(d.preco).to.eql(89.9); pm.expect(d.quantidade).to.eql(10); pm.collectionVariables.set(\"produto_id\", d.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Consultar produto cadastrado",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos/{{produto_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Mesmo ID\", function () { pm.expect(pm.response.json().data.id).to.eql(Number(pm.collectionVariables.get(\"produto_id\"))); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Atualizar produto com PUT",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos/{{produto_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Produto atualizado Postman\",\n  \"descricao\": null,\n  \"preco\": 99.9,\n  \"quantidade\": 8\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Atualização completa\", function () { const d = pm.response.json().data; pm.expect(d.nome).to.eql(\"Produto atualizado Postman\"); pm.expect(d.preco).to.eql(99.9); pm.expect(d.quantidade).to.eql(8); pm.expect(d.descricao).to.eql(null); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Atualizar quantidade com PATCH",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos/{{produto_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantidade\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Atualização parcial preserva nome\", function () { const d = pm.response.json().data; pm.expect(d.quantidade).to.eql(2); pm.expect(d.nome).to.eql(\"Produto atualizado Postman\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Rejeitar preço e estoque negativos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Inválido\",\n  \"preco\": -1,\n  \"quantidade\": -1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });",
+              "pm.test(\"Erros de validação\", function () { pm.expect(pm.response.json().errors).to.include.all.keys(\"preco\",\"quantidade\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Rejeitar campos obrigatórios ausentes",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });",
+              "pm.test(\"Nome e preço obrigatórios\", function () { pm.expect(pm.response.json().errors).to.include.all.keys(\"nome\",\"preco\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Rejeitar PUT incompleto",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos/{{produto_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Incompleto\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });",
+              "pm.test(\"PUT exige preço e quantidade\", function () { pm.expect(pm.response.json().errors).to.include.all.keys(\"preco\",\"quantidade\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Cadastrar com estoque padrão",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Amostra teste Postman\",\n  \"preco\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Estoque zero\", function () { const d = pm.response.json().data; pm.expect(d.quantidade).to.eql(0); pm.expect(d.preco).to.eql(0); pm.collectionVariables.set(\"amostra_id\", d.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Excluir amostra de teste",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos/{{amostra_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });",
+              "pm.test(\"Sem corpo\", function () { pm.expect(pm.response.text()).to.eql(\"\"); pm.collectionVariables.unset(\"amostra_id\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Excluir produto de teste",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos/{{produto_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });",
+              "pm.test(\"Sem corpo\", function () { pm.expect(pm.response.text()).to.eql(\"\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Confirmar exclusão",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/produtos/{{produto_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+              "pm.test(\"Erro em JSON\", function () { pm.expect(pm.response.json()).to.have.property(\"message\"); pm.collectionVariables.unset(\"produto_id\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Consumir lista real da DummyJSON",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/catalogo-externo?limit=2&skip=0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"API online consumida\", function () { const j = pm.response.json(); pm.expect(j.fonte).to.eql(\"DummyJSON\"); pm.expect(j.data).to.be.an(\"array\").with.lengthOf(2); pm.expect(j.data[0]).to.include.all.keys(\"id\",\"title\",\"price\"); pm.expect(j.limit).to.eql(2); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Consumir produto externo",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/catalogo-externo/1"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Produto externo 1\", function () { pm.expect(pm.response.json().data.id).to.eql(1); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Consultar produto externo inexistente",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/catalogo-externo/999999"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+              "pm.test(\"Mensagem de erro\", function () { pm.expect(pm.response.json().message).to.eql(\"Produto não encontrado na API externa.\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Rejeitar paginação externa inválida",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/catalogo-externo?limit=0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 422\", function () { pm.response.to.have.status(422); });",
+              "pm.test(\"Limite validado\", function () { pm.expect(pm.response.json().errors).to.have.property(\"limit\"); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
