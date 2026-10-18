@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProdutoResource;
 use App\Models\Produto;
 use Illuminate\Http\Request;
 
@@ -10,7 +11,7 @@ class ProdutoController extends Controller
 {
     public function index()
     {
-        return Produto::orderByDesc('id')->paginate(10);
+        return ProdutoResource::collection(Produto::orderByDesc('id')->paginate(10));
     }
 
     public function store(Request $request)
@@ -24,12 +25,12 @@ class ProdutoController extends Controller
 
         $produto = Produto::create($dados)->refresh();
 
-        return response()->json($produto, 201);
+        return (new ProdutoResource($produto))->response()->setStatusCode(201);
     }
 
     public function show(Produto $produto)
     {
-        return $produto;
+        return new ProdutoResource($produto);
     }
 
     public function update(Request $request, Produto $produto)
@@ -44,7 +45,7 @@ class ProdutoController extends Controller
 
         $produto->update($dados);
 
-        return $produto;
+        return new ProdutoResource($produto);
     }
 
     public function destroy(Produto $produto)
